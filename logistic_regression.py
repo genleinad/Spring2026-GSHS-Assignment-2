@@ -15,30 +15,28 @@ def logistic_regression(x_train: np.ndarray, y_train: np.ndarray, x_test: np.nda
         y_pred: Predicted labels for the test set
     '''
     # Your code here
-    def sigmoid(z) :
+    lr = 0.1
+    num_iter = 1000  
+
+    n_samples, n_features = x_train.shape
+    w = np.zeros(n_features)
+    b = 0.0     
+    def sigmoid(z):
         return 1 / (1 + np.exp(-z))
 
-    def comp_grad(x_train, y_train, w, lambda_reg=0.01):
-        z = np.dot(x_train, w)
-        h = sigmoid(z)
-        grad = np.dot(x_train.T, (h - y_train)) / len(y_train)
-        grad[1:] += lambda_reg * w[1:]
-        return grad
+    for _ in range(num_iter):
+        linear_model = np.dot(x_train, w) + b
+        y_pred = sigmoid(linear_model)
 
-    def grad_descent(x_train, y_train, lr= 0.1, epochs= 1000, lambda_reg= 0.01):
-        w = np.zeros(x_train.shape[1])
+        dw = (1 / n_samples) * np.dot(x_train.T, (y_pred - y_train))
+        db = (1 / n_samples) * np.sum(y_pred - y_train)
 
-        for epoch in range(epochs):
-            grad = comp_grad(x_train, y_train, w, lambda_reg)
-            w -= lr * grad
+        w -= lr * dw
+        b -= lr * db
 
-        return w
+    test_linear = np.dot(x_test, w) + b
+    y_test_pred_prob = sigmoid(test_linear)
 
-    x_train = np.c_[np.ones(x_train.shape[0]), x_train]
-    x_test = np.c_[np.ones(x_test.shape[0]), x_test]
+    y_pred = (y_test_pred_prob >= 0.5).astype(int)
 
-    optimal_w = grad_descent(x_train, y_train, lr= 0.1, epochs= 10000, lambda_reg= 0.01)
-
-    z_test = np.dot(x_test, optimal_w)
-    y_pred = (sigmoid(z_test) >= 0.5).astype(int)
     return y_pred
