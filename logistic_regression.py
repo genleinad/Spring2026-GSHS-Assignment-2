@@ -15,37 +15,30 @@ def logistic_regression(x_train: np.ndarray, y_train: np.ndarray, x_test: np.nda
         y_pred: Predicted labels for the test set
     '''
     # Your code here
-    x_train = np.asarray(x_train, dtype=float)
-    y_train = np.asarray(y_train, dtype=float).reshape(-1)
-    x_test = np.asarray(x_test, dtype=float)
+    def sigmoid(z) :
+        return 1 / (1 + np.exp(-z))
 
-    mu = x_train.mean(axis=0)
-    sigma = x_train.std(axis=0)
-    sigma[sigma == 0] = 1.0
+    def comp_grad(x_train, y_train, w, lambda_reg=0.01):
+        z = np.dot(x_train, w)
+        h = sigmoid(z)
+        grad = np.dot(x_train.T, (h - y_train)) / len(y_train)
+        grad[1:] += lambda_reg * w[1:]
+        return grad
 
-    x_train_s = (x_train - mu) / sigma
-    x_test_s = (x_test - mu) / sigma
+    def grad_descent(x_train, y_train, lr= 0.1, epochs= 1000, lambda_reg= 0.01):
+        w = np.zeros(x_train.shape[1])
 
-    n = x_train_s.shape[0]
-    X = np.hstack([np.ones((n, 1)), x_train_s])
-    Xt = np.hstack([np.ones((x_test_s.shape[0], 1)), x_test_s])
+        for epoch in range(epochs):
+            grad = comp_grad(x_train, y_train, w, lambda_reg)
+            w -= lr * grad
 
-    w = np.zeros(X.shape[1], dtype=float)
+        return w
 
-    lr = 0.2
-    iterations = 20000
-    l2 = 0.01
+    x_train = np.c_[np.ones(x_train.shape[0]), x_train]
+    x_test = np.c_[np.ones(x_test.shape[0]), x_test]
 
-    for _ in range(iterations):
-        z = X @ w
-        z = np.clip(z, -50, 50)
-        p = 1.0 / (1.0 + np.exp(-z))
+    optimal_w = grad_descent(x_train, y_train, lr= 0.1, epochs= 10000, lambda_reg= 0.01)
 
-        grad = (X.T @ (p - y_train)) / n
-        reg = l2 * np.r_[0.0, w[1:]] / n
-        w -= lr * (grad + reg)
-
-    zt = Xt @ w
-    zt = np.clip(zt, -50, 50)
-    pt = 1.0 / (1.0 + np.exp(-zt))
-    return (pt >= 0.5).astype(int)
+    z_test = np.dot(x_test, optimal_w)
+    y_pred = (sigmoid(z_test) >= 0.5).astype(int)
+    return y_pred
